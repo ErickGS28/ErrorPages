@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block tituloprueba %}Sistema de Reportes de Errores{% endblock %}
+
+{% block contenido %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-5">
+    <div class="row">
+        <!-- Formulario de Registro -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Registrar Nuevo Reporte</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Área de mensajes -->
+                    <div id="mensaje-area"></div>
+
+                    <form id="form-reporte">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.titulo.id_for_label }}" class="form-label">{{ form.titulo.label }}</label>
+                            {{ form.titulo }}
+                            <div class="error-field" id="error-titulo"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            <div class="error-field" id="error-descripcion"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.tipo_error.id_for_label }}" class="form-label">{{ form.tipo_error.label }}</label>
+                            {{ form.tipo_error }}
+                            <div class="error-field" id="error-tipo_error"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.url.id_for_label }}" class="form-label">{{ form.url.label }}</label>
+                            {{ form.url }}
+                            <div class="error-field" id="error-url"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.metodo_http.id_for_label }}" class="form-label">{{ form.metodo_http.label }}</label>
+                            {{ form.metodo_http }}
+                            <div class="error-field" id="error-metodo_http"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.ip_cliente.id_for_label }}" class="form-label">{{ form.ip_cliente.label }}</label>
+                            {{ form.ip_cliente }}
+                            <div class="error-field" id="error-ip_cliente"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Registrar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Reportes -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Reportes Registrados</h4>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                    <div id="lista-reportes">
+                        <p class="text-center text-muted">Cargando reportes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función para obtener el token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Cargar reportes al iniciar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarReportes();
+    });
+
+    // Función para cargar y renderizar reportes
+    function cargarReportes() {
+        fetch('/obtener-reportes/')
+            .then(response => response.json())
+            .then(data => {
+                const listaReportes = document.getElementById('lista-reportes');
+
+                if (data.length === 0) {
+                    listaReportes.innerHTML = '<p class="text-center text-muted">No hay reportes registrados</p>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(reporte => {
+                    // Determinar color según el tipo de error
+                    let bgColor = 'bg-light';
+                    const tipoError = reporte.tipo_error.toString();
+
+                    if (tipoError.startsWith('4')) {
+                        bgColor = 'bg-warning'; // Amarillo para errores 400
+                    } else if (tipoError.startsWith('5')) {
+                        bgColor = 'bg-danger text-white'; // Rojo para errores 500
+                    }
+
+                    const fecha = new Date(reporte.fecha_reporte).toLocaleString('es-ES');
+
+                    html += `
+                        <div class="card mb-3 ${bgColor}">
+                            <div class="card-body">
+                                <h5 class="card-title">${reporte.titulo}</h5>
+                                <p class="card-text">${reporte.descripcion}</p>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Tipo:</strong> ${reporte.tipo_error}<br>
+                                        <strong>Método:</strong> ${reporte.metodo_http}
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>IP:</strong> ${reporte.ip_cliente || 'N/A'}<br>
+                                        <strong>Fecha:</strong> ${fecha}
+                                    </div>
+                                </div>
+                                <p class="mb-0 mt-2"><strong>URL:</strong> <a href="${reporte.url}" target="_blank" class="text-decoration-none">${reporte.url}</a></p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                listaReportes.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error al cargar reportes:', error);
+                document.getElementById('lista-reportes').innerHTML =
+                    '<p class="text-danger text-center">Error al cargar los reportes</p>';
+            });
+    }
+
+    // Manejar el envío del formulario con JavaScript
+    document.getElementById('form-reporte').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevenir el envío tradicional
+
+        // Limpiar mensajes de error previos
+        document.querySelectorAll('.error-field').forEach(field => {
+            field.innerHTML = '';
+            field.style.display = 'none';
+        });
+        document.getElementById('mensaje-area').innerHTML = '';
+
+        // Obtener datos del formulario
+        const formData = new FormData(this);
+
+        // Enviar datos usando fetch
+        fetch('/reportes-error/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                // Mostrar mensaje de éxito
+                document.getElementById('mensaje-area').innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>¡Éxito!</strong> ${data.mensaje}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                // Limpiar el formulario
+                document.getElementById('form-reporte').reset();
+
+                // Recargar la lista de reportes
+                cargarReportes();
+
+            } else if (data.status === 'error') {
+                // Mostrar mensaje de error general
+                document.getElementById('mensaje-area').innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Error:</strong> ${data.mensaje}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                // Mostrar errores específicos de cada campo
+                if (data.errors) {
+                    for (const [field, errors] of Object.entries(data.errors)) {
+                        const errorDiv = document.getElementById(`error-${field}`);
+                        if (errorDiv) {
+                            errorDiv.innerHTML = `<small class="text-danger">${errors.join(', ')}</small>`;
+                            errorDiv.style.display = 'block';
+                        }
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('mensaje-area').innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Error:</strong> Ocurrió un error al procesar la solicitud
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .error-field {
+        display: none;
+        margin-top: 5px;
+    }
+
+    .card {
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+
+{% endblock %}
