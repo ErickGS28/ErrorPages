@@ -19,3 +19,5 @@ class ErrorReport(models.Model):
         verbose_name = "Reporte de Error"
         verbose_name_plural = "Reportes de Errores"
         ordering = ['-fecha_reporte']
+
+
