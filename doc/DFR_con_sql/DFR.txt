@@ -1,0 +1,131 @@
+##### 
+
+Usar Django REST Framework
+
+
+
+1\. Instalar y configurar Django REST Framework
+
+En tu terminal, instala el paquete:
+
+
+
+pip install djangorestframework
+
+
+
+
+
+Luego, en tu settings.py, agrégalo a tus aplicaciones (justo como hiciste con CORS):
+
+
+
+INSTALLED\_APPS = \[
+
+&nbsp;   # ... otras apps ...
+
+&nbsp;   'rest\_framework', # <--- Agrega esto
+
+&nbsp;   'corsheaders',
+
+&nbsp;   # ... tus apps ...
+
+]
+
+
+
+
+
+2\. Crear un "Serializer" (El traductor)
+
+En la carpeta de tu aplicación (donde tienes models.py), crea un archivo llamado serializers.py.
+
+El "Serializer" hace la magia de convertir tu modelo a JSON (para que React lo lea) y de convertir el FormData/JSON que envía React de vuelta a tu modelo.
+
+
+
+\# serializers.py
+
+from rest\_framework import serializers
+
+from .models import Mascota  # <--- Aquí va el o los modelos a serializar
+
+
+
+class MascotaSerializer(serializers.ModelSerializer):
+
+&nbsp;   class Meta:
+
+&nbsp;       model = Mascota
+
+&nbsp;       fields = '\_\_all\_\_' # Expone todos los campos del modelo (id, nombre, especie, etc.)
+
+
+
+
+
+3\. Crear el "ViewSet" (El controlador automático)
+
+Ahora ve a tu archivo views.py. Usa esta clase:
+
+
+
+\# views.py
+
+from rest\_framework import viewsets
+
+from .models import Mascota  # <--- El modelo 
+
+from .serializers import MascotaSerializer # <-- El serializador del modelo
+
+
+
+class MascotaViewSet(viewsets.ModelViewSet):
+
+&nbsp;   queryset = Mascota.objects.all()
+
+&nbsp;   serializer\_class = MascotaSerializer
+
+
+
+
+
+¡Y listo! Ese ModelViewSet ya incluye por defecto el código para LISTAR, CREAR, ACTUALIZAR y ELIMINAR.
+
+
+
+
+
+4\. Configurar las URLs automáticamente
+
+Finalmente, en tu archivo urls.py, vamos a usar un "Router" de DRF. Esto crea automáticamente las rutas (semanticas) sin que tengas que escribirlas una por una:
+
+
+
+
+
+\# urls.py
+
+from django.urls import path, include
+
+from rest\_framework.routers import DefaultRouter
+
+from .views import MascotaViewSet
+
+
+
+\# Creamos el router y registramos nuestro ViewSet
+
+router = DefaultRouter()
+
+router.register(r'mascotas', MascotaViewSet, basename='mascota')
+
+
+
+urlpatterns = \[
+
+&nbsp;   # Incluimos todas las rutas generadas por el router bajo el prefijo 'api/'
+
+&nbsp;   path('api/', include(router.urls)), 
+
+]

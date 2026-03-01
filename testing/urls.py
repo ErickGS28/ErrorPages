@@ -24,4 +24,5 @@ urlpatterns = [
     path('contacto/', core_views.contacto_view, name='contacto'),
     path('', include('error_reports.urls')),
     path('', include('biblioteca.urls')),
+    path('biblioteca-drf/', include('biblioteca_drf.urls')),
 ]

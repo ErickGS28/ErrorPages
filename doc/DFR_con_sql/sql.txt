@@ -1,0 +1,22 @@
+Conectar MySQL al proyecto Django:
+
+1) instalar el conector -->
+
+	pip install mysqlclient
+
+2) configura la conexión en settings.py -->
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'nombre_de_tu_bd',
+        'USER': 'tu_usuario',
+        'PASSWORD': 'tu_password',
+        'HOST': 'localhost',  # O la IP de tu servidor
+        'PORT': '3306',
+    }
+}
+
+3) Ejecuta este comando en tu terminal -->
+
+	python manage.py inspectdb > models.py
