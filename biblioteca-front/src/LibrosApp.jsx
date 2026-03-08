@@ -12,6 +12,8 @@ const FORM_INICIAL = {
   paginas: '',
   editorial: '',
   prestado: false,
+  portada: null,
+  portada_para_binario: null,
 };
 
 export default function LibrosApp() {
@@ -41,10 +43,15 @@ export default function LibrosApp() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    // Si es un input de archivo, guardamos el objeto File; si no, el valor normal
+    if (type === 'file') {
+      setFormData((prev) => ({ ...prev, [name]: e.target.files[0] }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
     setErroresBackend((prev) => ({ ...prev, [name]: undefined }));
   };
 
@@ -53,22 +60,35 @@ export default function LibrosApp() {
     setCargandoGuardar(true);
     setErroresBackend({});
 
-    // Convertir prestado a valor que Django entiende
-    const datos = {
-      ...formData,
-      prestado: formData.prestado ? 'true' : 'false',
-    };
+    // Empaquetamos en FormData porque podemos enviar archivos
+    const dataToSend = new FormData();
+    dataToSend.append('titulo', formData.titulo);
+    dataToSend.append('autor', formData.autor);
+    dataToSend.append('isbn', formData.isbn);
+    dataToSend.append('paginas', formData.paginas);
+    dataToSend.append('editorial', formData.editorial);
+    dataToSend.append('prestado', formData.prestado ? 'true' : 'false');
+
+    // Solo enviamos las imágenes si el usuario seleccionó un archivo nuevo
+    if (formData.portada instanceof File) {
+      dataToSend.append('portada', formData.portada);
+    }
+    if (formData.portada_para_binario instanceof File) {
+      dataToSend.append('portada_para_binario', formData.portada_para_binario);
+    }
 
     try {
       if (editandoId) {
-        await update(editandoId, datos);
+        await update(editandoId, dataToSend);
         toast.success('Libro actualizado correctamente.');
       } else {
-        await create(datos);
+        await create(dataToSend);
         toast.success('Libro registrado correctamente.');
       }
       setFormData(FORM_INICIAL);
       setEditandoId(null);
+      // Limpiamos visualmente los inputs de archivo en el DOM
+      document.getElementById('form-libros').reset();
       cargarLibros();
     } catch (err) {
       if (err.response && err.response.data) {
@@ -90,15 +110,19 @@ export default function LibrosApp() {
       paginas: libro.paginas,
       editorial: libro.editorial,
       prestado: libro.prestado,
+      portada: null,           // Obligamos a subir nueva imagen si desea cambiarla
+      portada_para_binario: null,
     });
     setEditandoId(libro.id);
     setErroresBackend({});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelarEdicion = () => {
     setFormData(FORM_INICIAL);
     setEditandoId(null);
     setErroresBackend({});
+    document.getElementById('form-libros').reset();
   };
 
   const handleEliminar = async (id) => {
@@ -136,6 +160,38 @@ export default function LibrosApp() {
           <span className="badge-disponible">Disponible</span>
         ),
       width: '110px',
+    },
+    {
+      name: 'Portada (Media)',
+      cell: (row) =>
+        row.portada ? (
+          <img
+            src={row.portada}
+            alt="Portada media"
+            width="45"
+            height="60"
+            style={{ objectFit: 'cover', borderRadius: '4px' }}
+          />
+        ) : (
+          'N/A'
+        ),
+      width: '100px',
+    },
+    {
+      name: 'Portada (BD)',
+      cell: (row) =>
+        row.portada_base64_display ? (
+          <img
+            src={row.portada_base64_display}
+            alt="Portada binaria"
+            width="45"
+            height="60"
+            style={{ objectFit: 'cover', borderRadius: '4px' }}
+          />
+        ) : (
+          'N/A'
+        ),
+      width: '100px',
     },
     {
       name: 'Acciones',
@@ -178,7 +234,7 @@ export default function LibrosApp() {
               </h5>
             </div>
             <div className="card-body">
-              <form onSubmit={handleSubmit}>
+              <form id="form-libros" onSubmit={handleSubmit}>
                 {/* Título */}
                 <div className="mb-3">
                   <label className="form-label">Título</label>
@@ -279,6 +335,38 @@ export default function LibrosApp() {
                   <label className="form-check-label" htmlFor="prestado">
                     ¿Prestado?
                   </label>
+                </div>
+
+                {/* Portada - carpeta media */}
+                <div className="mb-3">
+                  <label className="form-label">Portada (Carpeta Media)</label>
+                  <input
+                    type="file"
+                    name="portada"
+                    accept="image/jpeg,image/png"
+                    className={`form-control ${erroresBackend.portada ? 'is-invalid' : ''}`}
+                    onChange={handleChange}
+                    disabled={cargandoGuardar}
+                  />
+                  {erroresBackend.portada && (
+                    <div className="invalid-feedback">{erroresBackend.portada}</div>
+                  )}
+                </div>
+
+                {/* Portada - base de datos como binario */}
+                <div className="mb-3">
+                  <label className="form-label">Portada (Base de Datos - Binario)</label>
+                  <input
+                    type="file"
+                    name="portada_para_binario"
+                    accept="image/jpeg,image/png"
+                    className={`form-control ${erroresBackend.portada_para_binario ? 'is-invalid' : ''}`}
+                    onChange={handleChange}
+                    disabled={cargandoGuardar}
+                  />
+                  {erroresBackend.portada_para_binario && (
+                    <div className="invalid-feedback">{erroresBackend.portada_para_binario}</div>
+                  )}
                 </div>
 
                 {/* Botones */}

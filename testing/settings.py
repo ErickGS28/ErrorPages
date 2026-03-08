@@ -128,6 +128,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# Configuración para archivos multimedia (imágenes subidas por usuarios)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # CORS - permite peticiones desde el frontend React (Vite dev server)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",

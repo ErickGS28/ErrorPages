@@ -7,22 +7,14 @@ export const read = () => {
     return axios.get(`${BASE_URL}/`);
 };
 
-// Crear un libro nuevo
+// Crear un libro nuevo - recibe FormData ya armado desde el componente
 export const create = (data) => {
-    const formData = new FormData();
-    for (const key in data) {
-        formData.append(key, data[key]);
-    }
-    return axios.post(`${BASE_URL}/`, formData);
+    return axios.post(`${BASE_URL}/`, data);
 };
 
-// Actualizar un libro existente
+// Actualizar un libro existente - recibe FormData ya armado desde el componente
 export const update = (id, data) => {
-    const formData = new FormData();
-    for (const key in data) {
-        formData.append(key, data[key]);
-    }
-    return axios.put(`${BASE_URL}/${id}/`, formData);
+    return axios.put(`${BASE_URL}/${id}/`, data);
 };
 
 // Eliminar un libro
