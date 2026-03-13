@@ -19,6 +19,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from core import views as core_views
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from usuarios.views import RegistroView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +32,13 @@ urlpatterns = [
     path('', include('error_reports.urls')),
     path('', include('biblioteca.urls')),
     path('biblioteca-drf/', include('biblioteca_drf.urls')),
+
+    # Endpoint para iniciar sesión (recibe email y password, devuelve access y refresh tokens)
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # Endpoint para refrescar el token (recibe el refresh token, devuelve un nuevo access token)
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path('api/registro/', RegistroView.as_view(), name='registro'),
 ]
 
 # En modo DEBUG, Django sirve los archivos de la carpeta media

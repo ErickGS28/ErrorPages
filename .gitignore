@@ -27,3 +27,6 @@ media/
 # OS
 .DS_Store
 Thumbs.db
+
+# Archivos de entorno (nunca subir a Git)
+.env

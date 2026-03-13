@@ -16,7 +16,7 @@ const FORM_INICIAL = {
   portada_para_binario: null,
 };
 
-export default function LibrosApp() {
+export default function LibrosApp({ onLogout }) {
   const [libros, setLibros] = useState([]);
   const [formData, setFormData] = useState(FORM_INICIAL);
   const [editandoId, setEditandoId] = useState(null);
@@ -220,9 +220,15 @@ export default function LibrosApp() {
     <div className="container-fluid py-4">
       <Toaster position="top-right" />
 
-      <h2 className="mb-4 text-center fw-bold">
-        Gestión de Libros - Biblioteca
-      </h2>
+      <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h2 className="text-primary mb-0">Gestión de Libros - Biblioteca</h2>
+        <button
+          onClick={onLogout}
+          className="btn btn-outline-danger fw-bold"
+        >
+          Cerrar Sesión
+        </button>
+      </div>
 
       <div className="row g-4">
         {/* Formulario */}
